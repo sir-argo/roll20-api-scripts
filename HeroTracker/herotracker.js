@@ -1,6 +1,6 @@
-// Name:          HeroTracker, version 1.1
+// Name:          HeroTracker, version 1.2
 // Author:        Darren
-// Last Updated:  4/30/2018
+// Last Updated:  10/27/2018
 //
 // Purpse:
 //
@@ -26,26 +26,36 @@
 //   --segment <number>
 //   --speed_field <name>
 //   --dex_field <name>
+//   --forward
+//   --fwd
 //   --back
 //   --start
 
 var HeroTracker = HeroTracker || {
 
+	version: '1.2',
+	lastUpdate:  1540657608684,
+
+	checkInstall: function() {
+	    var updated = new Date(HeroTracker.lastUpdate);
+		log('[ HeroTracker v'+HeroTracker.version+', ' + updated.getFullYear() + "/" + (updated.getMonth()+1) + "/" + updated.getDate() + " ]");
+	},
+
 	TURN: [
-    //segment 0  1  2  3  4  5  6  7  8  9 10 11 12    speed
-            [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  //  0
-            [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],  //  1
-            [ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],  //  2
-            [ 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],  //  3
-            [ 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1],  //  4
-            [ 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1],  //  5
-            [ 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],  //  6
-            [ 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1],  //  7
-            [ 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1],  //  8
-            [ 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],  //  9
-            [ 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1],  // 10
-            [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // 11
-            [ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], // 12
+	//segment 0  1  2  3  4  5  6  7  8  9 10 11 12    speed
+			[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  //  0
+			[ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],  //  1
+			[ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],  //  2
+			[ 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],  //  3
+			[ 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1],  //  4
+			[ 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1],  //  5
+			[ 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],  //  6
+			[ 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1],  //  7
+			[ 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1],  //  8
+			[ 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],  //  9
+			[ 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1],  // 10
+			[ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // 11
+			[ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], // 12
 
 	write: function(s, who, style, from){
 		"use strict";
@@ -66,6 +76,7 @@ var HeroTracker = HeroTracker || {
 		var tokens;
 		var add = 0;
 		var remove = 0;
+		var forward = 0;
 		var back = 0;
 		var tag = "";
 		var speed_field = "SPD";
@@ -85,7 +96,6 @@ var HeroTracker = HeroTracker || {
 			tokens = _.reject(msg.selected, (o) => o._type !== 'graphic');
 		}
 
-//		tokens = msg.selected;
 		msg = msg.content;
 
 		argv.splice(0, 1);  // remove !HeroTracker
@@ -143,6 +153,12 @@ var HeroTracker = HeroTracker || {
 				argv.splice(0, 2);
 				break;
 
+			case "--forward":
+			case "--fwd":
+				forward = 1;
+				argv.splice(0, 1);
+				break;
+
 			case "--back":
 				back = 1;
 				argv.splice(0, 1);
@@ -185,13 +201,16 @@ var HeroTracker = HeroTracker || {
 		// we have parsed all chat parameters
 
 
-		// only the gm can to a 'back' action
+		// only the gm can do an 'forward' or 'back' action
 		if( back === 1 && !gm ) {
 			return HeroTracker.write("only a gm can do the 'back' action", who, "", "HeroTracker");
 		}
+		if( forward === 1 && !gm ) {
+			return HeroTracker.write("only a gm can do the 'forward' action", who, "", "HeroTracker");
+		}
 
 		// can't do more than one action: add, remove, back
-		if( ( add + remove + back ) > 1  ) {
+		if( ( add + remove + back ) > 1 ) {
 			return HeroTracker.write("can't do more than one action: 'add', 'remove', 'back'", who, "", "HeroTracker");
 		}
 
@@ -289,14 +308,18 @@ var HeroTracker = HeroTracker || {
 			}
 		}
 
+		if( forward === 1 ) {
+			HeroTracker.forwardTrack(who);
+		}
+
 		if( back === 1 ) {
 			HeroTracker.backTrack(who);
 		}
-		
+
 		if( random === 1 ) {
 			HeroTracker.randomize();
 		}
-		
+
 		if( start === 1 ) {
 			HeroTracker.startTurn();
 		}
@@ -358,6 +381,12 @@ var HeroTracker = HeroTracker || {
 							'<b>--dex_field</b> &' + 'lt;name&' + 'gt;'+
 						'</li> '+
 						'<li style="border-top: 1px solid #ccc;">'+
+							'<b>--forward</b>'+
+						'</li> '+
+						'<li style="border-top: 1px solid #ccc;">'+
+							'<b>--fwd</b>'+
+						'</li> '+
+						'<li style="border-top: 1px solid #ccc;">'+
 							'<b>--back</b>'+
 						'</li> '+
 						'<li style="border-top: 1px solid #ccc">'+
@@ -384,6 +413,10 @@ var HeroTracker = HeroTracker || {
 					'a cumbersome problem to cycle through the entire list should you accidentally move past a turn that isn&' + 'apos;t complete.  As such, HeroTracker '+
 					'includes an option to rollback the tracker one turn: </p>'+
 					'<p><b>!ht --back</b></p>'+
+					'<p style="padding-top: 5px; border-top: 1px solid #ccc;">And if we&' + 'apos;re going to have the ability to go backwards, we might as well also '+
+					'have the ability to go forwards: </p>'+
+					'<p><b>!ht --forward</b></p>'+
+					'<p><b>!ht --fwd</b></p>'+
 					'<p style="padding-top: 5px; border-top: 1px solid #ccc;">Hero System begins a turn at segment 12.  You can sort the tracker, '+
 					'with segment 12 at the top of the order, by using this command: </p>'+
 					'<p><b>!ht --start</b></p>'+
@@ -425,7 +458,7 @@ var HeroTracker = HeroTracker || {
 		if(dex) dex = parseInt(dex);
 
 		// compute the tiebreaker value
-		if (dex > 0)  tiebreaker = 1 - ( dex / 100 );
+		if (dex > 0) tiebreaker = 1 - ( dex / 100 );
 
 		turnorder = JSON.parse(Campaign().get('turnorder')||'[]');
 
@@ -438,8 +471,8 @@ var HeroTracker = HeroTracker || {
 			Campaign().set("turnorder", JSON.stringify(turnorder));
 			return;
 		}
-		// handle speeds greater than 12
 
+		// handle speeds greater than 12
 		while (speed>12) {
 			var i;
 			for (var s=1;s<=12;s++) {
@@ -520,6 +553,21 @@ var HeroTracker = HeroTracker || {
 		Campaign().set("turnorder", JSON.stringify(turnorder));
 	},
 
+	forwardTrack: function() {
+		"use strict";
+
+		var turnorder;
+		var turn;
+
+		turnorder = JSON.parse(Campaign().get('turnorder')||'[]');
+
+		if( turnorder.length <= 1) return;
+
+		turnorder.push( turnorder.shift() );
+
+		Campaign().set("turnorder", JSON.stringify(turnorder));
+	},
+
 	backTrack: function() {
 		"use strict";
 
@@ -537,18 +585,18 @@ var HeroTracker = HeroTracker || {
 
 	newTurnSort: function(a,b) {
 		"use strict";
-		
+
 		const aFloat = (parseFloat(a.pr)||0);
 		const bFloat = (parseFloat(b.pr)||0);
 		const cFloat = Math.round(((aFloat-bFloat) + 0.00001) * 100 ) / 100;
-		
+
 		if (cFloat === 0.0) return -1;
 		if( 12.0 <= aFloat && 12.0 > bFloat) return -1;
 		if( 12.0 > aFloat && 12.0 <= bFloat) return 1;
 
 		return (cFloat);
 	},
-	
+
 	startTurn: function() {
 		let turns = JSON.parse(Campaign().get('turnorder')||'[]');
 		turns.sort( HeroTracker.newTurnSort );
@@ -558,13 +606,13 @@ var HeroTracker = HeroTracker || {
 	sortRandom: function(a,b) {
 		return 0.5 - Math.random();
 	},
-	
+
 	randomize: function() {
 		let turns = JSON.parse(Campaign().get('turnorder')||'[]');
 		turns.sort( HeroTracker.sortRandom );
 		Campaign().set('turnorder', JSON.stringify(turns));
 	},
-	
+
 	handleChatMessage: function(msg){
 		"use strict"
 
@@ -583,4 +631,7 @@ var HeroTracker = HeroTracker || {
 
 }
 
-on("ready", function(){ HeroTracker.registerHeroTracker(); })
+on("ready", function(){
+	HeroTracker.checkInstall();
+	HeroTracker.registerHeroTracker();
+})
